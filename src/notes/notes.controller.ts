@@ -5,6 +5,7 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.auth-guard';
 import type { RequestUser } from 'src/auth/types/JwtPayload';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { SyncNotesDto } from './dto/sync-notes.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('notes')
@@ -39,5 +40,10 @@ export class NotesController {
   @Delete(':id')
   remove(@GetUser() user: RequestUser, @Param('id') id: string) {
     return this.notesService.remove(user.id, id);
+  }
+
+  @Post('sync')
+  async sync(@GetUser() user: RequestUser, @Body() syncDto: SyncNotesDto) {
+    return this.notesService.sync(user.id, syncDto.notes)
   }
 }

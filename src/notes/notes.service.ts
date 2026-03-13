@@ -2,10 +2,12 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { Prisma } from 'src/prisma/prisma.service';
+import { BaseNoteDto } from './dto/base-note.dto';
 
 @Injectable()
 export class NotesService {
   constructor(private prisma: Prisma) { }
+
   async create(userId: number, createNoteDto: CreateNoteDto) {
     const note = await this.prisma.note.create({
       data: {
@@ -78,5 +80,55 @@ export class NotesService {
     }
 
     return deleted;
+  }
+
+  async sync(userId: number, incomingNotes: BaseNoteDto[]) {
+    const syncResults = {
+      upserted: [] as BaseNoteDto[],
+      conflicts: [] as BaseNoteDto[],
+    };
+
+    const incomingIds = incomingNotes.map((note) => note.id);
+    const existingNotes = await this.prisma.note.findMany({
+      where: {
+        id: {
+          in: incomingIds
+        },
+        userId
+      }
+    });
+
+    const existingMap = new Map(existingNotes.map((n) => [n.id, n]));
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const incoming of incomingNotes) {
+        const existing = existingMap.get(incoming.id);
+
+        if (!existing || new Date(incoming.updatedAt) > new Date(existing.updatedAt)) {
+          // Case: Note is either new or client version is newer
+          const upserted = await tx.note.upsert({
+            where: {
+              id: incoming.id,
+            },
+            create: {
+              ...incoming,
+              userId,
+              version: 1
+            },
+            update: {
+              title: incoming.title,
+              content: incoming.content,
+              updatedAt: incoming.updatedAt,
+              version: { increment: 1 }
+            }
+          });
+          syncResults.upserted.push(upserted);
+        } else {
+          syncResults.conflicts.push(existing);
+        }
+      }
+    });
+
+    return syncResults;
   }
 }
