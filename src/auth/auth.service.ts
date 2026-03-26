@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from 'src/prisma/prisma.service';
@@ -87,6 +87,39 @@ export class AuthService {
     return result;
   }
 
+  async refresh(userId: number, refreshToken: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      }
+    });
+
+    if (!user || !user.hashed_refresh_token) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const tokenMatches = await bcrypt.compare(refreshToken, user.hashed_refresh_token);
+
+    if (!tokenMatches) {
+      await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          hashed_refresh_token: null,
+        }
+      });
+      throw new ForbiddenException('Access Denied');
+    }
+
+    const tokens = await this.getTokens(user.id, user.email);
+
+    await this.updateHashedRefreshToken(user.id, tokens.refresh_token);
+
+    return tokens;
+
+  }
+
   // Helper function to generate access and refresh tokens
   async getTokens(userId: number, email: string) {
     const payload = {
@@ -125,6 +158,4 @@ export class AuthService {
       }
     });
   }
-
-
 }
