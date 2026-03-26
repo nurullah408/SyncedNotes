@@ -1,4 +1,4 @@
-import { ForbiddenException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from 'src/prisma/prisma.service';
@@ -58,6 +58,33 @@ export class AuthService {
   // TODO: This endpoint will be used in the Admin panel later.
   findOne(id: number) {
     return `This action returns a #${id} auth`;
+  }
+
+  async signin(createUserDto: CreateUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: createUserDto.email,
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordHashMatches = await bcrypt.compare(createUserDto.password, user.password_hash);
+
+    if (passwordHashMatches) {
+      const tokens = await this.getTokens(user.id, user.email);
+
+      return {
+        user,
+        ...tokens,
+      }
+
+    }
+
+    throw new UnauthorizedException('Invalid Credentials');
+
   }
 
   async update(userId: number, updateUserDto: UpdateUserDto) {

@@ -16,8 +16,8 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) { }
 
-  @Post()
-  async create(
+  @Post('signup')
+  async signup(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) response: Response,
   ) {
@@ -48,6 +48,38 @@ export class AuthController {
         message: "Sign up Successfull",
         user,
       }
+    }
+
+  }
+
+  @Post('signin')
+  async signin(
+    @Body() createUserDto: CreateUserDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const { user, access_token, refresh_token } = await this.authService.signin(createUserDto);
+
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+
+    const accessTokenMaxAge = Number(this.configService.get('JWT_ACCESS_TOKEN_MAX_AGE'));
+    const refreshTokenMaxAge = Number(this.configService.get('JWT_REFRESH_TOKEN_MAX_AGE'));
+
+    response.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict',
+      maxAge: accessTokenMaxAge,
+    });
+
+    response.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict',
+      maxAge: refreshTokenMaxAge,
+    });
+
+    return {
+      user,
     }
 
   }
