@@ -14,10 +14,12 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  notes Note[]
+  id                   Int     @id @default(autoincrement())
+  email                String  @unique
+  name                 String?
+  password_hash        String
+  hashed_refresh_token String?
+  notes                Note[]
 }
 
 model Note {
