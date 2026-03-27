@@ -1,0 +1,41 @@
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { map, Observable } from 'rxjs';
+import { SKIP_RESPONSE_TRANSFORM } from './interceptor.constants';
+
+export interface Response<T> {
+  data: T,
+  message?: string,
+  statusCode: number,
+}
+
+@Injectable()
+export class TransformResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
+
+  constructor(private reflector: Reflector) { }
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+
+    const shouldSkip = this.reflector.get<boolean>(
+      SKIP_RESPONSE_TRANSFORM,
+      context.getHandler(),
+    )
+
+    if (shouldSkip) {
+      return next.handle();
+    }
+
+    return next.handle().pipe(
+      map((res) => {
+        const message = res?.message || 'Request Successful';
+        return {
+          statusCode: context.switchToHttp().getResponse().statusCode,
+          message,
+          data: res,
+        }
+      })
+    )
+
+  }
+
+}

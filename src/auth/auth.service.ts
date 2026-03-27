@@ -65,7 +65,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: {
         email: createUserDto.email,
-      }
+      },
     });
 
     if (!user) {
@@ -78,7 +78,11 @@ export class AuthService {
       const tokens = await this.getTokens(user.id, user.email);
 
       return {
-        user,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
         ...tokens,
       }
 

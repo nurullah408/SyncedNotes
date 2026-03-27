@@ -5,6 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { Prisma } from './prisma/prisma.service';
 import { NotesModule } from './notes/notes.module';
 import { AuthModule } from './auth/auth.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformResponseInterceptor } from './interceptors/transformResponse.interceptor';
 
 @Module({
   imports: [
@@ -15,6 +17,13 @@ import { AuthModule } from './auth/auth.module';
     AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService, Prisma],
+  providers: [
+    AppService,
+    Prisma,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformResponseInterceptor,
+    }
+  ],
 })
 export class AppModule { }
