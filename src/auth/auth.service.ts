@@ -1,12 +1,12 @@
 import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Prisma } from 'src/prisma/prisma.service';
+import { Prisma } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 import * as bcrypt from 'bcrypt';
-import { BCRYPT_SALT_ROUNDS } from 'src/constants';
+import { BCRYPT_SALT_ROUNDS } from '../constants';
 import { Response } from 'express';
 
 @Injectable()

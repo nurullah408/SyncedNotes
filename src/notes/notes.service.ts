@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
-import { Prisma } from 'src/prisma/prisma.service';
+import { Prisma } from '../prisma/prisma.service';
 import { BaseNoteDto } from './dto/base-note.dto';
 
 @Injectable()

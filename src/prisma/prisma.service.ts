@@ -8,7 +8,7 @@ import { env } from 'prisma/config';
 @Injectable()
 export class Prisma extends PrismaClient {
   constructor() {
-    const connectionString = env('DIRECT_URL');
+    const connectionString = env('DATABASE_URL');
     const adapter = new PrismaPg({
       connectionString
     });

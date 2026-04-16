@@ -2,9 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt.auth-guard';
+import { JwtAuthGuard } from '../auth/guards/jwt.auth-guard';
 import type { RequestUser } from 'src/auth/types/JwtPayload';
-import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { SyncNotesDto } from './dto/sync-notes.dto';
 
 @UseGuards(JwtAuthGuard)
