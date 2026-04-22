@@ -28,6 +28,7 @@ model Note {
   content   String   @db.Text
   version   Int      @default(1)
   updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
 }

@@ -1,20 +1,23 @@
-import { IsString, IsUUID, IsNotEmpty, IsOptional, IsDate, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsDate, IsNotEmpty, IsOptional, IsString, IsUUID, IsBoolean } from 'class-validator';
 
 export class BaseNoteDto {
   @IsUUID()
   @IsNotEmpty()
-  id: string; // This will be generated on the client side
+  id!: string; // This will be generated on the client side
 
   @IsString()
   @IsNotEmpty()
-  title: string
+  title!: string
 
   @IsString()
   @IsOptional()
-  content: string
+  content!: string
 
   @IsDate()
   @Type(() => Date)
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @IsBoolean()
+  isDeleted!: boolean;
 }

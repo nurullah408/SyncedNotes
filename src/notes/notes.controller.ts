@@ -6,11 +6,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt.auth-guard';
 import type { RequestUser } from 'src/auth/types/JwtPayload';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { SyncNotesDto } from './dto/sync-notes.dto';
+import { SyncService } from './sync.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('notes')
 export class NotesController {
-  constructor(private readonly notesService: NotesService) { }
+  constructor(
+    private readonly notesService: NotesService,
+    private readonly syncService: SyncService,
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -44,6 +48,6 @@ export class NotesController {
 
   @Post('sync')
   async sync(@GetUser() user: RequestUser, @Body() syncDto: SyncNotesDto) {
-    return this.notesService.sync(user.id, syncDto.notes)
+    return this.syncService.processSync(user.id, syncDto)
   }
 }

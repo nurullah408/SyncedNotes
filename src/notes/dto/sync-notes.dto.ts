@@ -6,5 +6,5 @@ export class SyncNotesDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => BaseNoteDto)
-  notes: BaseNoteDto[]
+  notes!: BaseNoteDto[]
 }
