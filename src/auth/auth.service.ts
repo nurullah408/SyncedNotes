@@ -62,12 +62,13 @@ export class AuthService {
   }
 
   async signin(createUserDto: CreateUserDto) {
+
     const user = await this.prisma.user.findUnique({
       where: {
         email: createUserDto.email,
       },
     });
-
+    console.log('User: ', user);
     if (!user) {
       throw new NotFoundException('User not found');
     }

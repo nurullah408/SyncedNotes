@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -25,6 +25,18 @@ async function bootstrap() {
   app.use(cookieParser())
 
   app.useGlobalPipes(
+    new ValidationPipe({
+      exceptionFactory: (errors) => {
+        const result = errors.reduce((acc, error) => {
+          const constraints = error.constraints ? Object.values(error.constraints) : [];
+          if (constraints) {
+            acc[error.property] = constraints[0];
+          }
+          return error;
+        }, {});
+        return new BadRequestException({ errors: result });
+      }
+    }),
     new ValidationPipe({
       whitelist: true,
       transform: true,
