@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Delete, Res, UseGuards, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Res,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,9 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
   async signup(
@@ -27,36 +35,30 @@ export class AuthController {
       this.authService.setCookies(response, { access_token, refresh_token });
 
       return {
-        message: "Sign up Successfull",
+        message: 'Sign up Successfull',
         user,
-      }
+      };
     }
-
   }
 
   @Post('signin')
   async signin(
     @Body() createUserDto: CreateUserDto,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
-    const { user, access_token, refresh_token } = await this.authService.signin(createUserDto);
+    const { user, access_token, refresh_token } =
+      await this.authService.signin(createUserDto);
 
     this.authService.setCookies(response, { access_token, refresh_token });
 
     return {
       user,
-    }
-
+    };
   }
 
   @Get()
   findAll() {
     return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -69,9 +71,8 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh'))
   async refresh(
     @GetUser() user: RequestUser,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
-
     if (!user?.refreshToken) {
       throw new UnauthorizedException('No refresh token given');
     }
@@ -81,14 +82,23 @@ export class AuthController {
     this.authService.setCookies(response, { ...result });
 
     return {
-      message: 'Token refreshed'
-    }
-
+      message: 'Token refreshed',
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
   remove(@GetUser() user: RequestUser) {
     return this.authService.remove(user.id);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@GetUser() user: RequestUser) {
+    const { id, email } = user;
+    return {
+      id,
+      email,
+    };
   }
 }
