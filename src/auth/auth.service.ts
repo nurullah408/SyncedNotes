@@ -1,4 +1,11 @@
-import { ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Prisma } from '../prisma/prisma.service';
@@ -11,46 +18,53 @@ import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
-
   constructor(
     private readonly prisma: Prisma,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const found = await this.prisma.user.findUnique({
       where: {
         email: createUserDto.email,
-      }
+      },
     });
 
     if (!found) {
-      const hashed = await bcrypt.hash(createUserDto.password, BCRYPT_SALT_ROUNDS);
+      const hashed = await bcrypt.hash(
+        createUserDto.password,
+        BCRYPT_SALT_ROUNDS,
+      );
       const user = await this.prisma.user.create({
         data: {
           email: createUserDto.email,
           password_hash: hashed,
-        }
+        },
       });
-      const { access_token, refresh_token } = await this.getTokens(user.id, user.email);
+      const { access_token, refresh_token } = await this.getTokens(
+        user.id,
+        user.email,
+      );
 
       await this.updateHashedRefreshToken(user.id, refresh_token);
 
       const userObj = {
         id: user.id,
         email: user.email,
-      }
+      };
 
       return {
         refresh_token,
         access_token,
-        user: userObj
-      }
+        user: userObj,
+      };
     }
 
-    throw new HttpException('This email is already exists', HttpStatus.CONFLICT);
-
+    throw new HttpException(
+      'This email is already exists',
+      HttpStatus.CONFLICT,
+    );
   }
   // TODO: This endpoint will be used in the Admin Panel later
   findAll() {
@@ -67,12 +81,15 @@ export class AuthService {
         email: createUserDto.email,
       },
     });
-
+    console.log('User: ', user);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const passwordHashMatches = await bcrypt.compare(createUserDto.password, user.password_hash);
+    const passwordHashMatches = await bcrypt.compare(
+      createUserDto.password,
+      user.password_hash,
+    );
 
     if (passwordHashMatches) {
       const tokens = await this.getTokens(user.id, user.email);
@@ -84,12 +101,10 @@ export class AuthService {
           email: user.email,
         },
         ...tokens,
-      }
-
+      };
     }
 
     throw new UnauthorizedException('Invalid Credentials');
-
   }
 
   async update(userId: number, updateUserDto: UpdateUserDto) {
@@ -99,7 +114,7 @@ export class AuthService {
       },
       where: {
         id: userId,
-      }
+      },
     });
     if (!user) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
@@ -110,11 +125,11 @@ export class AuthService {
   async remove(userId: number) {
     const result = await this.prisma.user.delete({
       where: {
-        id: userId
-      }
+        id: userId,
+      },
     });
     if (!result) {
-      throw new HttpException('Not found', HttpStatus.NOT_FOUND)
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
     }
     return result;
   }
@@ -123,14 +138,17 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
-      }
+      },
     });
 
     if (!user || !user.hashed_refresh_token) {
       throw new ForbiddenException('Access Denied');
     }
 
-    const tokenMatches = await bcrypt.compare(refreshToken, user.hashed_refresh_token);
+    const tokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.hashed_refresh_token,
+    );
 
     if (!tokenMatches) {
       await this.prisma.user.update({
@@ -139,7 +157,7 @@ export class AuthService {
         },
         data: {
           hashed_refresh_token: null,
-        }
+        },
       });
       throw new ForbiddenException('Access Denied');
     }
@@ -149,7 +167,6 @@ export class AuthService {
     await this.updateHashedRefreshToken(user.id, tokens.refresh_token);
 
     return tokens;
-
   }
 
   // Helper function to generate access and refresh tokens
@@ -164,14 +181,14 @@ export class AuthService {
       // 2. The refresh token that uses a different secret key
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d'
-      })
+        expiresIn: '7d',
+      }),
     ]);
 
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
-    }
+    };
   }
 
   async updateHashedRefreshToken(userId: number, token: string | null) {
@@ -186,24 +203,30 @@ export class AuthService {
         id: userId,
       },
       data: {
-        hashed_refresh_token: hashedRefreshToken
-      }
+        hashed_refresh_token: hashedRefreshToken,
+      },
     });
   }
 
-  setCookies(response: Response, tokens: { access_token: string, refresh_token: string }) {
-
+  setCookies(
+    response: Response,
+    tokens: { access_token: string; refresh_token: string },
+  ) {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
 
-    const accessTokenMaxAge = Number(this.configService.get('JWT_ACCESS_TOKEN_MAX_AGE'));
-    const refreshTokenMaxAge = Number(this.configService.get('JWT_REFRESH_TOKEN_MAX_AGE'));
+    const accessTokenMaxAge = Number(
+      this.configService.get('JWT_ACCESS_TOKEN_MAX_AGE'),
+    );
+    const refreshTokenMaxAge = Number(
+      this.configService.get('JWT_REFRESH_TOKEN_MAX_AGE'),
+    );
 
     const commonOptions = {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax' as const,
-      path: '/'
-    }
+      path: '/',
+    };
 
     response.cookie('access_token', tokens.access_token, {
       ...commonOptions,
@@ -213,7 +236,24 @@ export class AuthService {
     response.cookie('refresh_token', tokens.refresh_token, {
       ...commonOptions,
       maxAge: refreshTokenMaxAge,
-    })
+    });
+  }
 
+  removeCookies(response: Response) {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+
+    response.clearCookie('access_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+    });
+
+    response.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+      path: '/',
+    });
   }
 }
